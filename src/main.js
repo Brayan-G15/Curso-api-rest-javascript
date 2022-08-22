@@ -8,7 +8,17 @@
 //     },
 // });
 //Utils
-function createMovies(movies, container){
+
+const lazyloader = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+            const url = entry.target.getAttribute("data-img")
+            entry.target.setAttribute("src", url);
+        }
+    });
+});
+
+function createMovies(movies, container, lazyLoad = false){
     container.innerHTML = "";
 
     movies.forEach(movie => {
@@ -23,8 +33,12 @@ function createMovies(movies, container){
         const movieImg = document.createElement("img"); //Crea una nueva etiqueta img en el HTML
         movieImg.classList.add("movie-img"); // Mete la etiqueta creada dentro de la etiqueta que se pasa en el id parentesis
         movieImg.setAttribute("all", movie.title); //Le pasamos el valor titulo de la pelicula que al atributo all
-        movieImg.setAttribute("src", "https://image.tmdb.org/t/p/w300"+ movie.poster_path); //Le pasamos el valor titulo de la pelicula que al atributo all
+        movieImg.setAttribute(lazyLoad ? "data-img" : "src", "https://image.tmdb.org/t/p/w300"+ movie.poster_path); //Le pasamos el valor titulo de la pelicula que al atributo all
     
+        if (lazyLoad) {
+            lazyloader.observe(movieImg);
+        }
+
         //Metemos las etiquetas dentro de otras etiquetas para dar la estructura qu trae el HTML
         movieContainer.appendChild(movieImg);
         container.appendChild(movieContainer);
@@ -64,7 +78,7 @@ async function getTrendingMoviesPreview() {
 
     const movies = data.results; // Arroja un array
 
-    createMovies(movies, trendingMoviesPreviewList);
+    createMovies(movies, trendingMoviesPreviewList, true);
 
     // trendingMoviesPreviewList.innerHTML = "";
 

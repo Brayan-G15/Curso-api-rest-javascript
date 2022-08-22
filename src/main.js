@@ -138,7 +138,7 @@ async function  getMoviesByCategory(id){
 
     const movies = data.results; // Arroja un array
 
-    createMovies(movies, genericSection);
+    createMovies(movies, genericSection, true);
 
     // genericSection.innerHTML = ""; // limpia la carga de datos para evitar carga repetida
 

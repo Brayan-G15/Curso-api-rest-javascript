@@ -9,6 +9,31 @@
 // });
 
 //Utils
+
+function likedMoviesList (){
+    const item = JSON.parse(localStorage.getItem("liked_movies"));
+    let movies;
+
+    if (item){
+        movies = item;
+    } else {
+        movies = {};
+    }
+    return movies;
+}
+
+function likeMovie(movie) {
+    const likedMovies = likedMoviesList();
+
+    if (likedMovies[movie.id]) {
+        likedMovies[movie.id] = undefined;
+    } else {
+        likedMovies[movie.id] = movie;
+    }
+
+    localStorage.setItem("liked_movies", JSON.stringify(likedMovies));
+}
+
 const lazyloader = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
         if (entry.isIntersecting) {
@@ -28,21 +53,32 @@ function createMovies(movies, container, {lazyLoad = false, clean = true} = {}){
 
         const movieContainer = document.createElement("div"); //Crea una nueva etiqueta div en el HTML 
         movieContainer.classList.add("movie-container"); // Mete la eqitueta creada en dentro de la etiqueta que se pasa en el id parentesis
-        movieContainer.addEventListener("click", () => {
-            location.hash = "#movie=" + movie.id;
-        });
+        
 
         const movieImg = document.createElement("img"); //Crea una nueva etiqueta img en el HTML
         movieImg.classList.add("movie-img"); // Mete la etiqueta creada dentro de la etiqueta que se pasa en el id parentesis
         movieImg.setAttribute("all", movie.title); //Le pasamos el valor titulo de la pelicula que al atributo all
         movieImg.setAttribute(lazyLoad ? "data-img" : "src", "https://image.tmdb.org/t/p/w300"+ movie.poster_path); //Le pasamos el valor titulo de la pelicula que al atributo all
-    
+        movieImg.addEventListener("click", () => {
+            location.hash = "#movie=" + movie.id;
+        });
+
+        // boton para favoritos
+        const movieBtn =document.createElement("button");
+        movieBtn.classList.add("movie-btn");
+        likedMoviesList()[movie.id] && movieBtn.classList.add("movie-btn--liked");
+        movieBtn.addEventListener("click", () => {
+            movieBtn.classList.toggle("movie-btn--liked");
+            likeMovie(movie);
+            getLikedMovies(); //Llamamos la function para que agregue a favoritos sin necesidad de recargar
+        })
         if (lazyLoad) {
             lazyloader.observe(movieImg);
         }
 
         //Metemos las etiquetas dentro de otras etiquetas para dar la estructura qu trae el HTML
         movieContainer.appendChild(movieImg);
+        movieContainer.appendChild(movieBtn);
         container.appendChild(movieContainer);
     });
 
@@ -308,4 +344,15 @@ async function getRelatedMoviesId(id){
     const movies = data.results;
 
     createMovies(movies, relatedMoviesContainer);
+}
+
+
+function getLikedMovies() {
+    const likedMovies = likedMoviesList();
+    const moviesArray = Object.values(likedMovies);
+
+    createMovies(moviesArray, likedMoviesListArticle, { lazyLoad: true, clean: true});
+    console.log(likedMovies);
+
+    
 }

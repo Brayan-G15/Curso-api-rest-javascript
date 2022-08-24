@@ -7,8 +7,8 @@
 //         "apy_key": API_KEY,
 //     },
 // });
-//Utils
 
+//Utils
 const lazyloader = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
         if (entry.isIntersecting) {
@@ -18,8 +18,10 @@ const lazyloader = new IntersectionObserver((entries) => {
     });
 });
 
-function createMovies(movies, container, lazyLoad = false){
-    container.innerHTML = "";
+function createMovies(movies, container, {lazyLoad = false, clean = true} = {}){
+    if(clean) {
+        container.innerHTML = "";
+    }
 
     movies.forEach(movie => {
         //const trendingMoviesPreviewList = document.querySelector("#trendingPreview .trendingPreview-movieList");//Guarda la etiqueta del HTML en una constante
@@ -102,11 +104,13 @@ async function getTrendingMoviesPreview() {
 
 //Funcion lista de generos 
 async function getGenresMoviesPreview() {
-    const res = await fetch(`https://api.themoviedb.org/3/genre/movie/list?&api_key=${API_KEY}`);
+    const res = await fetch(`https://api.themoviedb.org/3/genre/movie/list?api_key=${API_KEY}`);
     const data = await res.json();
     const categories = data.genres; // Arroja un array
 
     createCategories(categories, categoriesPreviewList);
+
+    
     // categoriesPreviewList.innerHTML = "";
 
     // //Manipulacion del DOM
@@ -132,13 +136,23 @@ async function getGenresMoviesPreview() {
     // });
 }
 
+
+
 async function  getMoviesByCategory(id){
-    const res = await fetch(`https://api.themoviedb.org/3/discover/movie?with_genres=${id}&api_key=${API_KEY}`);
-    const data = await res.json();
+        const res = await fetch(`https://api.themoviedb.org/3/discover/movie?with_genres=${id}&api_key=${API_KEY}`);
+        const data = await res.json();
 
-    const movies = data.results; // Arroja un array
+        const movies = data.results; // Arroja un array
 
-    createMovies(movies, genericSection, true);
+        createMovies(movies, genericSection, {lazyLoad: true});
+    
+    // createMovies(movies, genericSection, {lazyLoad: true, clean: true});
+
+     // Boton paginacion, cargar mas
+    // const btnLoadMore = document.createElement("button");
+    // btnLoadMore.innerText = "load more";
+    // btnLoadMore.addEventListener("click", getPaginatedTrendingMovies)
+    // genericSection.appendChild(btnLoadMore);
 
     // genericSection.innerHTML = ""; // limpia la carga de datos para evitar carga repetida
 
@@ -162,13 +176,59 @@ async function  getMoviesByCategory(id){
     // });
 }
 
+function getPaginatedMoviesByCategory(id) {
+    return async function () {
+        const {
+        scrollTop,
+        scrollHeight,
+        clientHeight
+    } = document.documentElement;
+
+    const scrollIsBottom = (scrollTop + clientHeight) >= (scrollHeight - 20);
+    const pageIsNoteMax = page < maxPages;
+
+    if (scrollIsBottom && pageIsNoteMax) {
+            page++;
+            const res = await fetch(`https://api.themoviedb.org/3/discover/movie?with_genres=${id}&page=${page}&api_key=${API_KEY}`);
+            const data = await res.json();
+            console.log(data);
+            const movies = data.results; // Arroja un array
+          
+            createMovies(movies, genericSection, { lazyLoad: true, clean: false });
+        };        
+    }
+}
+
 async function  getMoviesBySearch(query){
     const res = await fetch(`https://api.themoviedb.org/3/search/movie?query=${query}&api_key=${API_KEY}`);
     const data = await res.json();
 
     const movies = data.results; // Arroja un array
-
+    maxPages = data.total_pages;
+    console.log(maxPages);
     createMovies(movies, genericSection);
+}
+
+function getPaginatedMoviesBySearch(query) {
+    return async function () {
+        const {
+            scrollTop,
+            scrollHeight,
+            clientHeight
+        } = document.documentElement;
+    
+        const scrollIsBottom = (scrollTop + clientHeight) >= (scrollHeight - 20);
+        const pageIsNoteMax = page < maxPages;
+    
+        if (scrollIsBottom && pageIsNoteMax) {
+            page++;
+            const res = await fetch(`https://api.themoviedb.org/3/search/movie?query=${query}+page=${page}&api_key=${API_KEY}`);
+            const data = await res.json();
+
+            const movies = data.results; // Arroja un array
+            createMovies(movies, genericSection, { lazyLoad: true, clean: false });
+        }
+    }
 }
 
 async function getTrendingMovies() {
@@ -176,9 +236,44 @@ async function getTrendingMovies() {
     const data = await res.json();
 
     const movies = data.results; // Arroja un array
+    maxPages = data.total_pages;
+    createMovies(movies, genericSection, {lazyLoad: true, clean: true});
 
-    createMovies(movies, genericSection);
+    // Boton paginacion, cargar mas
+    // const btnLoadMore = document.createElement("button");
+    // btnLoadMore.innerText = "load more";
+    // btnLoadMore.addEventListener("click", getPaginatedTrendingMovies)
+    // genericSection.appendChild(btnLoadMore);
 }
+ 
+async function getPaginatedTrendingMovies() {
+    const {
+        scrollTop,
+        scrollHeight,
+        clientHeight
+    } = document.documentElement;
+
+    const scrollIsBottom = (scrollTop + clientHeight) >= (scrollHeight - 20);
+    const pageIsNoteMax = page < maxPages;
+
+    if (scrollIsBottom && pageIsNoteMax) {
+        page++;
+        const res = await fetch(`https://api.themoviedb.org/3/trending/movie/day?page=${page}&api_key=${API_KEY}`);
+        const data = await res.json();
+
+        const movies = data.results; // Arroja un array
+
+        createMovies(movies, genericSection, {lazyLoad: true, clean: false});
+    }
+    
+
+    // const btnLoadMore = document.createElement("button");
+    // btnLoadMore.innerText = "load more";
+    // btnLoadMore.addEventListener("click", getPaginatedTrendingMovies)
+    // genericSection.appendChild(btnLoadMore);
+}
+
+
 
 async function getMovieById(id){
     const res = await fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${API_KEY}`);

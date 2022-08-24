@@ -1,3 +1,7 @@
+let maxPages;
+let page = 1;
+let infiniteScroll;
+
 searchFormBtn.addEventListener('click', () => {
     location.hash = '#search='+ searchFormInput.value;
   });
@@ -12,9 +16,15 @@ arrowBtn.addEventListener('click', () => {
 
 window.addEventListener('DOMContentLoaded', navigator, false);
 window.addEventListener('hashchange', navigator, false);
+window.addEventListener("scroll", infiniteScroll, false);
 
 function navigator() {
     console.log({ location });
+
+    if(infiniteScroll) {
+      window.removeEventListener("scroll", infiniteScroll, {passive: false});
+      infiniteScroll = undefined;
+    }
     //Con operadores ternarios evitamos escribir tantos else if
     location.hash.startsWith('#trends')    ? trendsPage()       :
     location.hash.startsWith('#search=')   ? searchPage()       :
@@ -22,10 +32,6 @@ function navigator() {
     location.hash.startsWith('#category=') ? categoriesPage()   :
     homePage()
 
-    // Al abiri un genero nos abre arriba
-    document.body.scrollTop = 0;
-    document.documentElement.scrollTop = 0; 
-    
     // if (location.hash.startsWith('#trends')) {
     //   trendsPage();
     // } else if (location.hash.startsWith('#search=')) {
@@ -37,6 +43,14 @@ function navigator() {
     // } else {
     //   homePage();
     // }
+
+    // Al abrir un genero nos abre desde el inicio
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0; 
+    
+    if(infiniteScroll) {
+      window.addEventListener("scroll", infiniteScroll, {passive: false});
+    }
   }
 
   function homePage() {
@@ -76,11 +90,13 @@ function navigator() {
     movieDetailSection.classList.add('inactive');
 
     
-    const [_, categorydata] = location.hash.split("=");//["#category", "id-name"]
-    const [categoryId, categoryName] = categorydata.split("-"); //["id", "name"]
+    const [_, categoryData] = location.hash.split("=");//["#category", "id-name"]
+    const [categoryId, categoryName] = categoryData.split("-"); //["id", "name"]
 
     headerCategoryTitle.innerHTML = decodeURIComponent(categoryName); // Pone el nombre del genero en la pantalla 
     getMoviesByCategory(categoryId); // Manda el id del genero para abrirlo en pantalla
+
+    infiniteScroll = getPaginatedMoviesByCategory(categoryId);
   }
   
   function movieDetailsPage() {
@@ -123,6 +139,8 @@ function navigator() {
     // ["#search, busqueda"]
     const [_, query] = location.hash.split("=");
     getMoviesBySearch(query);
+
+    infiniteScroll = getPaginatedMoviesBySearch(query);
   }
   
   function trendsPage() {
@@ -144,4 +162,6 @@ function navigator() {
     headerCategoryTitle.innerHTML = "Tendencias"
 
     getTrendingMovies();
+
+    infiniteScroll = getPaginatedTrendingMovies;
   }
